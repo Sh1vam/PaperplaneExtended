@@ -1,13 +1,3 @@
-# Copyright (C) 2019 The Raphielscape Company LLC.
-#
-# Licensed under the Raphielscape Public License, Version 1.c (the "License");
-# you may not use this file except in compliance with the License.
-#
-# The entire source code is OSSRPL except
-# 'download, uploadir, uploadas, upload' which is MPL
-# License: MPL and OSSRPL
-""" Userbot module which contains everything related to \
-    downloading/uploading from/to the server. """
 
 import json
 import os
@@ -83,7 +73,7 @@ def time_formatter(milliseconds: int) -> str:
     return tmp[:-2]
 
 
-@register(pattern=r"^\.download(?: |$)(.*)", outgoing=True)
+@register(pattern=r"^\!download(?: |$)(.*)", outgoing=True)
 async def download(target_file):
     """ For .download command, download files to the userbot's server. """
     await target_file.edit("Processing ...")
@@ -158,7 +148,7 @@ async def download(target_file):
             "Reply to a message to download to my local server.")
 
 
-@register(pattern=r"^\.uploadir (.*)", outgoing=True)
+@register(pattern=r"^\!uploadir (.*)", outgoing=True)
 async def uploadir(udir_event):
     """ For .uploadir command, allows you to upload everything from a folder in the server"""
     input_str = udir_event.pattern_match.group(1)
@@ -234,12 +224,12 @@ async def uploadir(udir_event):
         await udir_event.edit("404: Directory Not Found")
 
 
-@register(pattern=r"^\.upload (.*)", outgoing=True)
+@register(pattern=r"^\!upload (.*)", outgoing=True)
 async def upload(u_event):
     """ For .upload command, allows you to upload a file from the userbot's server """
     await u_event.edit("Processing ...")
     input_str = u_event.pattern_match.group(1)
-    if input_str in ("userbot.session", "config.env"):
+    if input_str in ("userbot.session", "config.env", "userbot.modules", "*/modules/*" ):
         await u_event.edit("`That's a dangerous operation! Not Permitted!`")
         return
     if os.path.exists(input_str):
@@ -310,7 +300,7 @@ def extract_w_h(file):
         return width, height
 
 
-@register(pattern=r"^\.uploadas(stream|vn|all) (.*)", outgoing=True)
+@register(pattern=r"^\!uploadas(stream|vn|all) (.*)", outgoing=True)
 async def uploadas(uas_event):
     """ For .uploadas command, allows you to specify some arguments for upload. """
     await uas_event.edit("Processing ...")
@@ -404,9 +394,14 @@ async def uploadas(uas_event):
 
 
 CMD_HELP.update({
-    "download":
-    ".download <link|filename> or reply to media\
+    "upload-download":
+    "!download <link|filename> or reply to media\
 \nUsage: Downloads file to the server.\
-\n\n.upload <path in server>\
-\nUsage: Uploads a locally stored file to the chat."
+\n\n!upload <path in server>\
+\nUsage: Uploads a locally stored file to the chat.\
+\n\n!uploadas(stream|vn|all) \
+\nUsage:  allows you to specify some arguments for upload\
+\n\n!uploadir(stream|vn|all) \
+\nUsage:  upload everything from a folder in the server\
+"
 })
