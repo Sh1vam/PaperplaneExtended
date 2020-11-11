@@ -13,38 +13,28 @@ from PIL import Image
 import random
 from telethon.tl.types import DocumentAttributeFilename, MessageMediaPhoto
 from userbot import bot, CMD_HELP
-from userbot.events import register
+from userbot.utils import register
 from telethon.tl.functions.messages import GetStickerSetRequest
 from telethon.tl.types import InputStickerSetID
 from telethon.tl.types import DocumentAttributeSticker
-
-PACK_FULL = "Whoa! That's probably enough stickers for one pack, give it a break. \
-A pack can't have more than 120 stickers at the moment."
 
 KANGING_STR = [
     "Using Witchery to kang this sticker...",
     "Plagiarising hehe...",
     "Inviting this sticker over to my pack...",
     "Kanging this sticker...",
-    "Hey that's a nice sticker!\
-    \nMind if I kang?!..",
-    "hehe me stel ur stikér\
-    \nhehe.",
-    "Ay look over there (☉｡☉)!→\
-    \nWhile I kang this...",
-    "Roses are red \
-    \nviolets are blue, \
-    \nkanging this sticker \
-    \nso my pacc looks cool",
+    "Hey that's a nice sticker!\nMind if I kang?!..",
+    "hehe me stel ur stikér\nhehe.",
+    "Ay look over there (☉｡☉)!→\nWhile I kang this...",
+    "Roses are red violets are blue, kanging this sticker so my pacc looks cool",
     "Imprisoning this sticker...",
     "Mr.Steal Your Sticker is stealing this sticker... ",
 ]
 
 
-@register(outgoing=True, pattern="^\.kang")
+@register(outgoing=True, pattern="^.kang")
 async def kang(args):
     """ For .kang command, kangs stickers or creates new ones. """
-    kang_meme = random.choice(KANGING_STR)
     user = await bot.get_me()
     if not user.username:
         user.username = user.first_name
@@ -56,11 +46,11 @@ async def kang(args):
 
     if message and message.media:
         if isinstance(message.media, MessageMediaPhoto):
-            await args.edit(f"`{kang_meme}`")
+            await args.edit(f"`{random.choice(KANGING_STR)}`")
             photo = io.BytesIO()
             photo = await bot.download_media(message.photo, photo)
         elif "image" in message.media.document.mime_type.split('/'):
-            await args.edit(f"`{kang_meme}`")
+            await args.edit(f"`{random.choice(KANGING_STR)}`")
             photo = io.BytesIO()
             await bot.download_file(message.media.document, photo)
             if (DocumentAttributeFilename(file_name='sticker.webp') in
@@ -68,7 +58,7 @@ async def kang(args):
                 emoji = message.media.document.attributes[1].alt
                 emojibypass = True
         elif "tgsticker" in message.media.document.mime_type:
-            await args.edit(f"`{kang_meme}`")
+            await args.edit(f"`{random.choice(KANGING_STR)}`")
             await bot.download_file(message.media.document,
                                     'AnimatedSticker.tgs')
 
@@ -90,7 +80,7 @@ async def kang(args):
     if photo:
         splat = args.text.split()
         if not emojibypass:
-            emoji = "🤔"
+            emoji = "😂"
         pack = 1
         if len(splat) == 3:
             pack = splat[2]  # User sent both
@@ -105,8 +95,8 @@ async def kang(args):
                 # pack
                 emoji = splat[1]
 
-        packname = f"a{user.id}_by_{user.username}_{pack}"
-        packnick = f"@{user.username}'s kang pack Vol.{pack}"
+        packname = f"{user.username}_{pack}"
+        packnick = f"@{user.username}'s_{pack}"
         cmd = '/newpack'
         file = io.BytesIO()
 
@@ -131,12 +121,12 @@ async def kang(args):
                 await bot.send_read_acknowledge(conv.chat_id)
                 await conv.send_message(packname)
                 x = await conv.get_response()
-                while x.text == PACK_FULL:
+                while "120" in x.text:
                     pack += 1
-                    packname = f"a{user.id}_by_{user.username}_{pack}"
-                    packnick = f"@{user.username}'s kang pack Vol.{pack}"
-                    await args.edit(f"`{kang_meme}\
-                    \nMoving on to Vol.{str(pack)}..`")
+                    packname = f"{user.username}_{pack}"
+                    packnick = f"@{user.username}'s_{pack}"
+                    await args.edit("`Switching to Pack " + str(pack) +
+                                    " due to insufficient space`")
                     await conv.send_message(packname)
                     x = await conv.get_response()
                     if x.text == "Invalid pack selected.":
@@ -176,8 +166,9 @@ async def kang(args):
                         await conv.get_response()
                         # Ensure user doesn't get spamming notifications
                         await bot.send_read_acknowledge(conv.chat_id)
-                        await args.edit(f"`Haha, yes. New kang pack unlocked!\
-                            \nPack can be found [here](t.me/addstickers/{packname})",
+                        await args.edit(f"`Sticker added in a Different Pack !\
+                            \nThis Pack is Newly created!\
+                            \nYour pack can be found [here](t.me/addstickers/{packname})",
                                         parse_mode='md')
                         return
                 if is_anim:
@@ -275,7 +266,7 @@ async def resize_photo(photo):
     return image
 
 
-@register(outgoing=True, pattern="^\.stkrinfo$")
+@register(outgoing=True, pattern="^.stkrinfo$")
 async def get_pack_info(event):
     if not event.is_reply:
         await event.edit("`I can't fetch info from nothing, can I ?!`")

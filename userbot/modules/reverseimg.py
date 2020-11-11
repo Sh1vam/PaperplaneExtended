@@ -1,7 +1,10 @@
 # Copyright (C) 2019 The Raphielscape Company LLC.
+#
 # Thanks to @kandnub, for this awesome module !!
+#
 # Licensed under the Raphielscape Public License, Version 1.c (the "License");
 # you may not use this file except in compliance with the License.
+#
 """ Userbot module for reverse searching stickers and images on Google """
 
 import io
@@ -22,7 +25,7 @@ useragent = 'Mozilla/5.0 (Linux; Android 9; SM-G960F Build/PPR1.180610.011; wv) 
 opener.addheaders = [('User-agent', useragent)]
 
 
-@register(outgoing=True, pattern=r"^.imgsearch(?: |$)(\d*)")
+@register(outgoing=True, pattern=r"^.reverse(?: |$)(\d*)")
 @errors_handler
 async def okgoogle(img):
     """ For .reverse command, Google search images and stickers. """
@@ -34,7 +37,7 @@ async def okgoogle(img):
         photo = io.BytesIO()
         await bot.download_media(message, photo)
     else:
-        await img.edit("Reply to photo or sticker")
+        await img.edit("`Reply to photo or sticker nigger.`")
         return
 
     if photo:
@@ -42,7 +45,7 @@ async def okgoogle(img):
         try:
             image = Image.open(photo)
         except OSError:
-            await img.edit('`Unsupported format.`')
+            await img.edit('`Unsupported sexuality, most likely.`')
             return
         name = "okgoogle.png"
         image.save(name, "PNG")
