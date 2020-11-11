@@ -1,76 +1,68 @@
-# We're using Alpine Edge
-FROM alpine:edge
 
-# We have to uncomment Community repo for some packages
-RUN sed -e 's;^#http\(.*\)/edge/community;http\1/edge/community;g' -i /etc/apk/repositories
+FROM python:3.8-slim-buster
+RUN apt-get update && apt upgrade -y && apt-get install sudo -y
 
-# install ca-certificates so that HTTPS works consistently
-# other runtime dependencies for Python are installed later
-RUN apk add --no-cache ca-certificates
-
-# Installing Packages
-RUN apk add --no-cache --update \
-    bash \
-    build-base \
-    bzip2-dev \
-    curl \
+RUN apt-get install -y\
     coreutils \
+    bash \
+    nodejs \
+    bzip2 \
+    curl \
     figlet \
     gcc \
     g++ \
     git \
     aria2 \
-    util-linux \
-    libevent \
-    libjpeg-turbo-dev \
-    chromium \
-    chromium-chromedriver \
-    jpeg-dev \
-    libc-dev \
+    #util-linux \
+    libevent-dev \
+    libjpeg-dev \
     libffi-dev \
-    libpq \
+    libpq-dev \
     libwebp-dev \
+    libxml2 \
     libxml2-dev \
     libxslt-dev \
-    linux-headers \
-    musl-dev \
+    musl \
     neofetch \
-    openssl-dev \
+    libcurl4-openssl-dev \
+    postgresql \
     postgresql-client \
-    postgresql-dev \
+    postgresql-server-dev-all \
+    #chromedriver \
+    openssl \
     pv \
     jq \
     wget \
+    python3 \
     python3-dev \
-    readline-dev \
+    python3-pip \
+    libreadline-dev \
+    #metasploit-framework \
+    #apktool \
+    #openjdk-13-jdk \
+    #zipalign \
+    sqlite \
     ffmpeg \
-    sqlite-dev \
-    sudo \
-    zlib-dev \
-    python-dev
+    libsqlite3-dev \
+    chromium \
+    zlib1g-dev \
+    recoverjpeg \
+    zip \
+    megatools \
+    libfreetype6-dev
 
 
-RUN python3 -m ensurepip \
-    && pip3 install --upgrade pip setuptools \
-    && rm -r /usr/lib/python*/ensurepip && \
-    if [ ! -e /usr/bin/pip ]; then ln -s pip3 /usr/bin/pip ; fi && \
-    if [[ ! -e /usr/bin/python ]]; then ln -sf /usr/bin/python3 /usr/bin/python; fi && \
-    rm -r /root/.cache
 
-#
-# Clone repo and prepare working directory
-#
-RUN git clone https://github.com/AvinashReddy3108/PaperplaneExtended /root/userbot
+
+RUN pip3 install --upgrade pip setuptools 
+RUN pip3 install --upgrade pip install wheel 
+RUN git clone https://github.com/rekcah-pavi/javes /root/userbot
 RUN mkdir /root/userbot/bin/
 WORKDIR /root/userbot/
-
-#
-# Copies session and config (if it exists)
-#
-COPY ./sample_config.env ./userbot.session* ./config.env* /root/userbot/
-
-#
-# Install requirements
-#
-RUN pip3 install -r requirements.txt
+RUN mv userbot/javes_main/extra/apktool /usr/local/bin
+RUN mv userbot/javes_main/extra/apktool.jar /usr/local/bin
+#RUN mv userbot/javes_main/extra/apk.rb /usr/share/metasploit-framework/lib/msf/core/payload
+RUN chmod +x /usr/local/bin/*
+RUN python3 -m pip install --no-warn-script-location --no-cache-dir --upgrade -r requirements.txt
+RUN sudo chmod o+r /usr/lib/python3/dist-packages/*
 CMD ["python3","-m","userbot"]
