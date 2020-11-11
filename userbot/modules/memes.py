@@ -1,148 +1,168 @@
 # Copyright (C) 2019 The Raphielscape Company LLC.
 #
-# Licensed under the Raphielscape Public License, Version 1.c (the "License");
+# Licensed under the Raphielscape Public License, Version 1.b (the "License");
 # you may not use this file except in compliance with the License.
+#
+#
+
 """ Userbot module for having some fun with people. """
 
-from asyncio import sleep
-from random import choice, getrandbits, randint
-from re import sub
+import asyncio
+import random
+import re
 import time
+from userbot import ALIVE_NAME
 
 from collections import deque
 
 import requests
 
+from telethon.tl.functions.users import GetFullUserRequest
+from telethon.tl.types import MessageEntityMentionName
+
 from cowpy import cow
 
-from userbot import CMD_HELP
-from userbot.events import register
-from userbot.modules.admin import get_user_from_event
+from userbot import CMD_HELP,YOUTUBE_API_KEY
+from userbot.utils import register,admin_cmd
 
 # ================= CONSTANT =================
-METOOSTR = [
-    "Me too thanks",
-    "Haha yes, me too",
-    "Same lol",
-    "Me irl",
-    "Same here",
-    "Haha yes",
-    "Me rn",
+RENDISTR = [
+    "`I Know Uh ez Rendi Bhay Dont show Your Randi Pesa Here`",
+    "`Jag Suna suna laage Sab #maderchod bhay`",
+    "`you talking behind meh wew uh iz my fan now bhay`",
+    "`Wanna pass in Life Goto BRAZZER.CAM BHAY`",
+    "`Uh iz Pro i iz noob your boob is landi uh are Randi`",
+    "`Sellers Nasa calling Uh bhay😆`",
+    "`Badwoo ki yojna behan bna ke ch*da uh iz badwa its your yozja?`",
+    "`CHAND PE CHADA HAI CHANDYAAN KA GHODA TERA NAAM HAI MANSUR TU HAI BEHAN KA LOD*😂`",
+    "`Jab se dil lga baithe tanhai me maa chu*da baithe wo kho gyi kisi aur ke pyar hum apne hi jaato me aag lga baithe`",
+    "`Chadii ke ander se lal pani kha se ata hai ky teri masuka ka bhosda bhi paan khata hai😂`",
+    "`Sun bhosdi ke By anonyCrew MOHABBAT KE SIWA AUR BHI GAM HAI JAMANE ME BSDK GAND PAHAT JATI HAI PAISA KAMANE ME`",
+    "`Thaan liya tha Sayri nhi krege Unka pichwada dekha Alfaaz nikal gye`",
+    "`Ravivaar ko dekha Chand Ka Tukra Itna Baar Dekha par Jaath na Ukra`",
+    "`Katal kro Tir se Talwar me Ky Rkkha hai Maal Chodo Sari Me Salwar me Ky Rkkha hai`",
 ]
+NOOBSTR = [
+    "`YOU PRO NIMBA DONT MESS WIDH MEH`",
+    "`Haha yes`",
+    "`NOOB NIMBA TRYING TO BE FAMOUS KEK`",
+    "`Sometimes one middle finger isn’t enough to let someone know how you feel. That’s why you have two hands`",
+    "`Some Nimbas need to open their small minds instead of their big mouths`",
+    "`UH DONT KNOW MEH SO STAY AWAY LAWDE`",
+    "`Kysa kysaaaa haaan? Phir MAAR nhi Khayega tu?`",
+    "`Zikr Jinka hota hai galiyo meh woh bhosdika ajj paya gya naliyo me`",
+]
+ZALG_LIST = [["̖",
+              " ̗",
+              " ̘",
+              " ̙",
+              " ̜",
+              " ̝",
+              " ̞",
+              " ̟",
+              " ̠",
+              " ̤",
+              " ̥",
+              " ̦",
+              " ̩",
+              " ̪",
+              " ̫",
+              " ̬",
+              " ̭",
+              " ̮",
+              " ̯",
+              " ̰",
+              " ̱",
+              " ̲",
+              " ̳",
+              " ̹",
+              " ̺",
+              " ̻",
+              " ̼",
+              " ͅ",
+              " ͇",
+              " ͈",
+              " ͉",
+              " ͍",
+              " ͎",
+              " ͓",
+              " ͔",
+              " ͕",
+              " ͖",
+              " ͙",
+              " ͚",
+              " ",
+              ],
+             [" ̍",
+              " ̎",
+              " ̄",
+              " ̅",
+              " ̿",
+              " ̑",
+              " ̆",
+              " ̐",
+              " ͒",
+              " ͗",
+              " ͑",
+              " ̇",
+              " ̈",
+              " ̊",
+              " ͂",
+              " ̓",
+              " ̈́",
+              " ͊",
+              " ͋",
+              " ͌",
+              " ̃",
+              " ̂",
+              " ̌",
+              " ͐",
+              " ́",
+              " ̋",
+              " ̏",
+              " ̽",
+              " ̉",
+              " ͣ",
+              " ͤ",
+              " ͥ",
+              " ͦ",
+              " ͧ",
+              " ͨ",
+              " ͩ",
+              " ͪ",
+              " ͫ",
+              " ͬ",
+              " ͭ",
+              " ͮ",
+              " ͯ",
+              " ̾",
+              " ͛",
+              " ͆",
+              " ̚",
+              ],
+             [" ̕",
+              " ̛",
+              " ̀",
+              " ́",
+              " ͘",
+              " ̡",
+              " ̢",
+              " ̧",
+              " ̨",
+              " ̴",
+              " ̵",
+              " ̶",
+              " ͜",
+              " ͝",
+              " ͞",
+              " ͟",
+              " ͠",
+              " ͢",
+              " ̸",
+              " ̷",
+              " ͡",
+              ]]
 
-ZALG_LIST = [[
-    "̖",
-    " ̗",
-    " ̘",
-    " ̙",
-    " ̜",
-    " ̝",
-    " ̞",
-    " ̟",
-    " ̠",
-    " ̤",
-    " ̥",
-    " ̦",
-    " ̩",
-    " ̪",
-    " ̫",
-    " ̬",
-    " ̭",
-    " ̮",
-    " ̯",
-    " ̰",
-    " ̱",
-    " ̲",
-    " ̳",
-    " ̹",
-    " ̺",
-    " ̻",
-    " ̼",
-    " ͅ",
-    " ͇",
-    " ͈",
-    " ͉",
-    " ͍",
-    " ͎",
-    " ͓",
-    " ͔",
-    " ͕",
-    " ͖",
-    " ͙",
-    " ͚",
-    " ",
-],
-             [
-                 " ̍",
-                 " ̎",
-                 " ̄",
-                 " ̅",
-                 " ̿",
-                 " ̑",
-                 " ̆",
-                 " ̐",
-                 " ͒",
-                 " ͗",
-                 " ͑",
-                 " ̇",
-                 " ̈",
-                 " ̊",
-                 " ͂",
-                 " ̓",
-                 " ̈́",
-                 " ͊",
-                 " ͋",
-                 " ͌",
-                 " ̃",
-                 " ̂",
-                 " ̌",
-                 " ͐",
-                 " ́",
-                 " ̋",
-                 " ̏",
-                 " ̽",
-                 " ̉",
-                 " ͣ",
-                 " ͤ",
-                 " ͥ",
-                 " ͦ",
-                 " ͧ",
-                 " ͨ",
-                 " ͩ",
-                 " ͪ",
-                 " ͫ",
-                 " ͬ",
-                 " ͭ",
-                 " ͮ",
-                 " ͯ",
-                 " ̾",
-                 " ͛",
-                 " ͆",
-                 " ̚",
-             ],
-             [
-                 " ̕",
-                 " ̛",
-                 " ̀",
-                 " ́",
-                 " ͘",
-                 " ̡",
-                 " ̢",
-                 " ̧",
-                 " ̨",
-                 " ̴",
-                 " ̵",
-                 " ̶",
-                 " ͜",
-                 " ͝",
-                 " ͞",
-                 " ͟",
-                 " ͠",
-                 " ͢",
-                 " ̸",
-                 " ̷",
-                 " ͡",
-             ]]
 
 EMOJIS = [
     "😂",
@@ -176,68 +196,40 @@ EMOJIS = [
 ]
 
 INSULT_STRINGS = [
-    "Owww ... Such a stupid idiot.",
-    "Don't drink and type.",
-    "I think you should go home or better a mental asylum.",
-    "Command not found. Just like your brain.",
-    "Do you realize you are making a fool of yourself? Apparently not.",
-    "You can type better than that.",
-    "Bot rule 544 section 9 prevents me from replying to stupid humans like you.",
-    "Sorry, we do not sell brains.",
-    "Believe me you are not normal.",
-    "I bet your brain feels as good as new, seeing that you never use it.",
-    "If I wanted to kill myself I'd climb your ego and jump to your IQ.",
-    "Zombies eat brains... you're safe.",
-    "You didn't evolve from apes, they evolved from you.",
-    "Come back and talk to me when your I.Q. exceeds your age.",
-    "I'm not saying you're stupid, I'm just saying you've got bad luck when it comes to thinking.",
-    "What language are you speaking? Cause it sounds like bullshit.",
-    "Stupidity is not a crime so you are free to go.",
-    "You are proof that evolution CAN go in reverse.",
-    "I would ask you how old you are but I know you can't count that high.",
-    "As an outsider, what do you think of the human race?",
-    "Brains aren't everything. In your case they're nothing.",
-    "Ordinarily people live and learn. You just live.",
-    "I don't know what makes you so stupid, but it really works.",
-    "Keep talking, someday you'll say something intelligent! (I doubt it though)",
-    "Shock me, say something intelligent.",
-    "Your IQ's lower than your shoe size.",
-    "Alas! Your neurotransmitters are no more working.",
-    "Are you crazy you fool.",
-    "Everyone has the right to be stupid but you are abusing the privilege.",
-    "I'm sorry I hurt your feelings when I called you stupid. I thought you already knew that.",
-    "You should try tasting cyanide.",
-    "Your enzymes are meant to digest rat poison.",
-    "You should try sleeping forever.",
-    "Pick up a gun and shoot yourself.",
-    "You could make a world record by jumping from a plane without parachute.",
-    "Stop talking BS and jump in front of a running bullet train.",
-    "Try bathing with Hydrochloric Acid instead of water.",
-    "Try this: if you hold your breath underwater for an hour, you can then hold it forever.",
-    "Go Green! Stop inhaling Oxygen.",
-    "God was searching for you. You should leave to meet him.",
-    "give your 100%. Now, go donate blood.",
-    "Try jumping from a hundred story building but you can do it only once.",
-    "You should donate your brain seeing that you never used it.",
-    "Volunteer for target in an firing range.",
-    "Head shots are fun. Get yourself one.",
-    "You should try swimming with great white sharks.",
-    "You should paint yourself red and run in a bull marathon.",
-    "You can stay underwater for the rest of your life without coming back up.",
-    "How about you stop breathing for like 1 day? That'll be great.",
-    "Try provoking a tiger while you both are in a cage.",
-    "Have you tried shooting yourself as high as 100m using a canon.",
-    "You should try holding TNT in your mouth and igniting it.",
-    "Try playing catch and throw with RDX its fun.",
-    "I heard phogine is poisonous but i guess you wont mind inhaling it for fun.",
-    "Launch yourself into outer space while forgetting oxygen on Earth.",
-    "You should try playing snake and ladders, with real snakes and no ladders.",
-    "Dance naked on a couple of HT wires.",
-    "Active Volcano is the best swimming pool for you.",
-    "You should try hot bath in a volcano.",
-    "Try to spend one day in a coffin and it will be yours forever.",
-    "Hit Uranium with a slow moving neutron in your presence. It will be a worthwhile experience.",
-    "You can be the first person to step on sun. Have a try.",
+     "`Owww ... Such a stupid idiot.`",
+    "`Don't drink and type.`",
+    "`Command not found. Just like your brain.`",
+    "`Bot rule 420 section 69 prevents me from replying to stupid nubfuks like you.`",
+    "`Sorry, we do not sell brains.`",
+    "`Believe me you are not normal.`",
+    "`I bet your brain feels as good as new, seeing that you never use it.`",
+    "`If I wanted to kill myself I'd climb your ego and jump to your IQ.`",
+    "`You didn't evolve from apes, they evolved from you.`",
+    "`What language are you speaking? Cause it sounds like bullshit.`",
+    "`You are proof that evolution CAN go in reverse.`",
+    "`I would ask you how old you are but I know you can't count that high.`",
+    "`As an outsider, what do you think of the human race?`",
+    "`Ordinarily people live and learn. You just live.`",
+    "`Keep talking, someday you'll say something intelligent!.......(I doubt it though)`",
+    "`Everyone has the right to be stupid but you are abusing the privilege.`",
+    "`I'm sorry I hurt your feelings when I called you stupid. I thought you already knew that.`",
+    "`You should try tasting cyanide.`",
+    "`You should try sleeping forever.`",
+    "`Sharam kar bsdwale,kitni bkchodi deta.`",
+    "`Chup Madarhox, bilkul chup..`",
+    "`Me zindagi me chunotiyo se jyda inn jese Chutiyo se pareshaan hu.`",
+    "`Pick up a gun and shoot yourself.`",
+    "`Try bathing with Hydrochloric Acid instead of water.`",
+    "`Go Green! Stop inhaling Oxygen.`",
+    "`God was searching for you. You should leave to meet him.`",
+    "`You should Volunteer for target in an firing range.`",
+    "`Try playing catch and throw with RDX its fun.`",
+    "`Jaana chodu chad jake land chaat`",
+    "`Yaar ajab tere nkhare,gazab tera style hain, gand dhone ki tameez nahi, haath main mobile hai`",
+    "`People like you are the reason we have middle fingers.`",
+    "`When your mom dropped you off at the school, she got a ticket for littering.`",
+    "`You’re so ugly that when you cry, the tears roll down the back of your head…just to avoid your face.`",
+    "`If you’re talking behind my back then you’re in a perfect position to kiss my a**!.`",
 ]
 
 UWUS = [
@@ -361,29 +353,11 @@ FACEREACTS = [
     "(｡◕‿◕｡)",
 ]
 
-RUNS_STR = [
-    "Runs to Thanos..",
-    "Runs far, far away from earth..",
-    "Running faster than Bolt coz i'mma userbot !!",
-    "Runs to Marie..",
-    "This Group is too cancerous to deal with.",
-    "Cya bois",
-    "Kys",
-    "I go away",
-    "I am just walking off, coz me is too fat.",
-    "I Fugged off!",
-    "Will run for chocolate.",
-    "I run because I really like food.",
-    "Running...\nbecause dieting is not an option.",
-    "Wicked fast runnah",
-    "If you wanna catch me, you got to be fast...\nIf you wanna stay with me, you got to be good...\nBut if you wanna pass me...\nYou've got to be kidding.",
-    "Anyone can run a hundred meters, it's the next forty-two thousand and two hundred that count.",
-    "Why are all these people following me?",
-    "Are the kids still chasing me?",
-    "Running a marathon...there's an app for that.",
-]
-
-CHASE_STR = [
+RUNSREACTS = [
+    "`Runs to Thanos`",
+    "`Runs far, far away from earth`",
+    "`Running faster than supercomputer, cuzwhynot`",
+    "`Runs to SunnyLeone`",
     "Where do you think you're going?",
     "Huh? what? did they get away?",
     "ZZzzZZzz... Huh? what? oh, just them again, nevermind.",
@@ -433,28 +407,121 @@ CHASE_STR = [
     "Han shot first. So will I.",
     "What are you running after, a white rabbit?",
     "As The Doctor would say... RUN!",
+    "`Running a marathon...there's an app for that.`",
 ]
 
-HELLOSTR = [
-    "Hi !",
-    "‘Ello, gov'nor!",
-    "What’s crackin’?",
-    "‘Sup, homeslice?",
-    "Howdy, howdy ,howdy!",
-    "Hello, who's there, I'm talking.",
-    "You know who this is.",
-    "Yo!",
-    "Whaddup.",
-    "Greetings and salutations!",
-    "Hello, sunshine!",
-    "Hey, howdy, hi!",
-    "What’s kickin’, little chicken?",
-    "Peek-a-boo!",
-    "Howdy-doody!",
-    "Hey there, freshman!",
-    "I come in peace!",
-    "Ahoy, matey!",
-    "Hiya!",
+RAPE_STRINGS = [
+     "`Rape Done Drink The Cum`",
+     "`EK baat yaad rkhio, Chut ka Chakkar matlab maut se takkar`",
+     "`The user has been successfully raped`",
+     "`Dekho Bhaiyya esa hai! Izzat bachailo apni warna Gaand maar lenge tumhari`",
+     "`Relax your Rear, ders nothing to fear,The Rape train is finally here`",
+     "`Rape coming... Raped! haha 😆`",
+     "`Kitni baar Rape krvyega mujhse?`",
+     "`Tu Randi hai Sabko pta hai😂`",
+     "`Don't rape too much bossdk, else problem....`",
+     "`Tu sasti rendi hai Sabko pta hai😂`",
+     "`Lodu Andha hai kya Yaha tera rape ho raha hai aur tu abhi tak yahi gaand mara raha hai lulz`",
+] 
+ABUSE_STRINGS = [
+	   "`Chutiya he rah jaye ga`",
+	   "`Kya Phooka Tha Kal?`",
+	   "`Abe Bhang mar ke aya hei kya ?`",
+	   "`Tum Ek baat Batao Roj RandiPa Karte Ho Uska Koi Fayeda hei?`",
+       "`Jaa Jake Bartan Manj Bakchodi mat kar`",
+       "`Lund Choos Le {DEFAULTUSER} Ka Bhosdk `",
+       "`Phir A Gya Tu Bhosdk Chut Si Sakal Ka`",
+       "`Randi Kahike Lund Pasad Hei to Choss Le {DEFAULTUSER} Ka",
+]
+GEY_STRINGS = [
+     "`you gey bsdk`",
+     "`you gey`",
+     "`you gey in the house`",
+     "`you chakka`",
+     "`Bhago BC! Chakka aya`",
+     "`you gey gey gey gey gey gey gey gey`",
+     "`you gey go away`",
+]
+PRO_STRINGS = [
+     "`This gey is pro as phack.`",
+     "`Proness Lebel: 6969696969`",
+     "`Itna pro banda dekhlia bc, ab to marna hoga.`",
+     "`U iz pro but i iz ur DAD, KeK`",
+     "`NOOB NIMBA TRYING TO BE FAMOUS KEK`",
+     "`Sometimes one middle finger isnâ€™t enough to let someone know how you feel. Thatâ€™s why you have two hands`",
+     "`Some Nimbas need to open their small minds instead of their big mouths`",
+     "`UH DONT KNOW MEH SO STAY AWAY LAWDE`",
+     "`Kysa kysaaaa haaan? Phir MAAR nhi Khayega tu?`",
+     "`Zikr Jinka hota hai galiyo meh woh bhosdika ajj paya gya naliyo me`",
+
+]
+CHU_STRINGS = [
+     "`Taare hai Asmaan me very very bright jaat na jla bskd dekh le apni hight.`",
+     "`jindagi ki na toote lari iski lulli hoti nhi khadi`",
+     "`Kbhi kbhi meri dil me khyaal ata hai ayse chutiyo ko kon paida kr jata hai😂.`",
+     "`Saawan ka mahina pawan kare shor jake gand mara bskd kahi aur.`", 
+     "`Dil ke armaa ansuon me beh jaye tum bskd ke chutiye hi reh gye.`",
+     "`Ishq Se Tabiyat Ne Zeest Ka Mazaa aya maine is lodu ko randi khane me paya.`",
+     "`Mirza galib ki yeh khani hai tu bhosdika hai yeh sab ki jubani hai.`",
+     "`Ek dora hai ek nora hai charo taraf kohra hi kohra hai ye sabse bada behan ka lawda hai.`",
+     "`Phool murjhate achhe nahi lagte aap land khujate acche nahi lagte yehi umar hai chodne ki yaaro aap bathroom mein hilaate acche nahi lagte.`",
+     "`Badi hasrat thi ki khole iski maa ki salwaar ka  nara par iski maa ki berukhi dekho ki aagayi nangi dobara.`",
+     "`Na jaane konsi shilajit hai iski maa ki yadon mein jab bhi sochta hun jhanajhana jaata hun.`",
+     "`Yaara Teri Yaari Pe Mujhe Shak Nahi Tha; Lekin Sabne Teri Gaand Maari, Kya Mera Koi Haq Nahi Tha.`",
+     "`Yehi to kamal hai hamara baap bante ho tum aur naam aata hai humara.`",
+     "`Chinti chadi pahad pe angrejon ka jamana tha lund ki pistol thi chut pe nishana tha.`",
+     "`Bhola khada bich bazaar fut fut kr roye  gaand  Maar Sab Chal Diyo Paisa Diyo N Koye.`",
+     "`Pani kam hain  matke mein gand mardunga jhatke mein.`",
+     "`Duniya haseeno ka mela fir bhi mera chutiya dost akela.`",
+     "`8 ko kehte hain hindi mein aath ja bsdk tu ja ke kutiya ki chaat.`",
+     "`Purani baatein bhool ja mera lund pakad ke jhool ja.`",
+     "`Permanent hai pakka tera baap chaka.`",
+     "`Yaar azab tera nakhra ghazab tera style hai gand dhone ki tameez nahi haath mein mobile hain.`",
+]
+FUK_STRINGS = [
+   "`It's better to let someone think you are an Idiot than to open your mouth and prove it.`",
+   "`Talking to a liberal is like trying to explain social media to a 70 years old`",
+   "`CHAND PE HAI APUN LAWDE.`",
+   "`Pehle main tereko chakna dega, fir daru pilayega, fir jab aap dimag se nahi L*nd se sochoge, tab bolega..`",
+   "`Pardhan mantri se number liya, parliament apne :__;baap ka hai...`",
+   "`Cachaa Ooo bhosdi wale Chacha`",
+   "`Aaisi Londiya Chodiye, L*nd Ka Aapa Khoye, Auro Se Chudi Na Ho, Biwi Wo Hi Hoye`",
+   "`Nachoo Bhosdike Nachoo`",
+   "`Jinda toh jaat ke baal bhi hai`",
+   "`Sab ko pta tu randi ka baccha hai (its just a joke)`", 
+]
+THANOS_STRINGS = [
+     "`Mashoor Rand, Ne Arz Kiya Hai. Aane Wale Aate Hai, Jaane Wale Jaate Hai. Yaade Bas Unki Reh Jaati Hai, Jo G**Nd Sujaa Ke Jaate Hai`",
+     "`Pani kam hai matkey me ga*d mardunga teri ek jatke me`",
+     "`Aand kitne bhi bade ho, lund ke niche hi rehte hai`",
+     "`Tum Ameer hum gareeb hum jhopdiwale Tum bhosiwale`",
+     "`Sisi Bhari Gulab ki padi palang ke pass chodne wale chod gye ab q baitha udaas`",
+     "`Phuloo Ka Raja Gulaab Kaato me Rehta hai Jeewan ka Nirmata jaato me rehta hai😂`",
+     "`Chude hue maal ko yaad mt krna Jo Chut na de usse kabhi friyad mt karna jise chudna hai wo chud ke rhegi bekar me muth maar ke apni jindagi barbaad mt krna`",
+     "`Gand mare gandu Chut mare Chutiya Sabse accha mutti 2 mint me chutti😛`",
+     "`Marzi Ka Sex Pap Nahi Hota.. Piche Se Dalne Wala Kabhi Baap Nahi Hota.. Condom Zarur Lagana Mere Dost Qki.. Sex K Waqt Popat Ke Pass Dimag Nahi Hota.`",
+     "`Uss Ne Hothon Se Chhu Kar Lowd* Pe Nasha Kar Diya; Lu*D Ki Baat To Aur Thi, Uss Ne To Jhato* Ko Bhi Khada Kar Diya!`",
+]
+ABUSEHARD_STRING = [
+	"`Madarchod Randi ke bacche.Oye bosdike madarchod bhen ke lode tere gand me lohe ka danda garam karke dalu randwe tujhetho gali ke kutte gand pe chut rakh ke katenge me bata raha hu tere lode pe madhu makkhi Katelode ke ando pe Road roller chale tu kab bathroom me muthne Jaye tho Tera loda ghir Jaye fir tere ando me se lizard ke bacche nikle teko kidnap Kare aur childporn banaye maa ke chuttad ke lode tere saat Johnny sins rape Kare aur jab wo teko anal de tab loda andar fas Jaye bkl tere jhaat pe waxing karunga me dhek lio fir jab tu chillayega na tab tere muh me Mai gai ka gobar dalunga sale tere gand ke balo pe tel laga ke jala du me teko Anaconda leke gand me dalu tho muh se nikle maa ke lode hamesha chutiyo jaisa bartav kartha he tu maa ke Dai chawal drugs tere gand Me dalunga thi tatti nahi nikle maa darchod kabhi teko Marne ka mouka mil gaya na tho bas I'll do my best to get that tatti outof you aur tere jaise chutio ko is duniya me jagaha bhi nahi maa ke lode bandarchod tere gand me chitiya Kate wo bhi bullet ants maadarchod samj nahi aaraha tere baap NE teko kya khake paida kiya Tha kesa chutiya he tu rand ke bacche teko shadi me khana khane na mile teko gand pe 4 thappad mare sab log aur blade se likhe I want anal madarchod bosdike maccharki tatte ke baal chutiye maa ke chut pe ghode ka Lund tere gand me jaltha hu koila Dale bhen ke lode MAA KI CHUT MAI TALWAR DUNGA BC CHUT FAT JAEGI AUR USME SE ITNA KHOON NIKLEGA MZA AJAEGA DEKHNE KA SALE MAA KE BHOSDE SE BAHR AJA FIR BAAP SE ZUBAN DA TERI MAA KI CHUT CHOD CHOD KE BHOSDABNADU MADARCHOD AUR USKE UPAR CENENT LAGADU KI TERE JESA GANDU INSAAN KABHI BAHR NA A SKE ESI GANDI CHUT MAI SE LODA LASUN MADRCHOD TERI MAA KI CHUT GASTI AMA KA CHUTIA BACHA TERI MAA KO CHOD CHOD K PAGAL KAR DUNGA MAA K LODY KISI SASTIII RANDII K BACHY TERI MAA KI CHOOT MAIN TEER MAARUN GANDU HARAMI TERI COLLEGE JATI BAJI KA ROAD PEY RAPE KARONGANDU KI OLAAD HARAM KI NASAL PAPA HUN TERA BHEN PESH KAR AB PAPA KO TERI MAA KKALE KUSS MAIN KIS`",
+	"`Main roz teri behno ki banjar chut me apna lawda daalke andar haryali lata tha magar aaj unke ke baare me sunke mujhe bhut afsos huwa..ki unko ab bada loudha chahye..ab mera balatkaaari lawda lagataar 4 ghante tk apne muh me kon rakhega..vo teri behne hi thi jo apni kaali magar rasilli chut mere saamne khol deti aur zameen pe naagin ki tarah rengne lgti thi jaise ki kisine unki chut pe naariyal tod diya ho vo b bada wala mumbai ka naariyal..apni chennal maa ko b nhi bhej rahe mere paas to main kaixe tum logo se vaada karu ki main teri maa chodd dungaw..ab agar tun sach me chahta hai ki main tum dono k mc ki chut me dhammal karu to mera lawda apne muh me rakho aur kaho Sameer hamare sage papa hain... Aur agar tb b the apni maa ki kaali chut mere saamne nahi rakhi to tumhare ghar me ghuske tumhari maa ka balatkaar kar dungaw jaixe delhi me huwa tha...ab teri chudi hui kuttiyo ki tarah apni gaand hilaate hue mere aage kalapna mt ni to tumhari fatti bhoxdi me 100 ched karunga`",
+	"`Taare hai Asmaan me very very bright jaat na jla bskd dekh le apni hight.`",
+        "`Zindagi ki na toote lari iski lulli hoti nhi khadi`",
+        "`Kbhi kbhi meri dil me khyaal ata hai ayse chutiyo ko kon paida kr jata hai😂.`",
+        "`Saawan ka mahina pawan kare shor jake gand mara bskd kahi aur.`", 
+        "`Dil ke armaa ansuon me beh jaye tum bskd ke chutiye hi reh gye.`",
+        "`Ishq Se Tabiyat Ne Zeest Ka Mazaa aya maine is lodu ko randi khane me paya.`",
+        "`Mirza galib ki yeh khani hai tu bhosdika hai yeh sab ki jubani hai.`",
+	"`Mashoor Rand, Ne Arz Kiya Hai. Aane Wale Aate Hai, Jaane Wale Jaate Hai. Yaade Bas Unki Reh Jaati Hai, Jo G**Nd Sujaa Ke Jaate Hai`",
+        "`Pani kam hai matke me gand marlunga jhatke me.`",
+        "`Aand kitne bhi bade ho, lund ke niche hi rehte hai`",
+        "`Tum Ameer hum gareeb hum jhopdiwale Tum bhosiwale`",
+        "`Sisi Bhari Gulab ki padi palang ke pass chodne wale chod gye ab q baitha udaas`",
+        "`Phuloo Ka Raja Gulaab Kaato me Rehta hai Jeewan ka Nirmata jaato me rehta hai😂`",
+        "`Chude hue maal ko yaad mt krna Jo Chut na de usse kabhi friyad mt karna jise chudna hai wo chud ke rhegi bekar me muth maar ke apni jindagi barbaad mt krna`",
+        "`Gand mare gandu Chut mare Chutiya Sabse accha mutti 2 mint me chutti😛`",
+        "`Marzi Ka Sex Pap Nahi Hota.. Piche Se Dalne Wala Kabhi Baap Nahi Hota.. Condom Zarur Lagana Mere Dost Qki.. Sex K Waqt Popat Ke Pass Dimag Nahi Hota.`",
+        "`Uss Ne Hothon Se Chhu Kar Lowd* Pe Nasha Kar Diya; Lu*D Ki Baat To Aur Thi, Uss Ne To Jhato* Ko Bhi Khada Kar Diya!`",
 ]
 
 SHGS = [
@@ -467,19 +534,26 @@ SHGS = [
     "┐(´д`)┌",
     "┐(´∀｀)┌",
     "ʅ(́◡◝)ʃ",
+    "ლ(ﾟдﾟლ)",
     "┐(ﾟ～ﾟ)┌",
     "┐('д')┌",
+    "ლ｜＾Д＾ლ｜",
+    "ლ（╹ε╹ლ）",
+    "ლ(ಠ益ಠ)ლ",
     "┐(‘～`;)┌",
     "ヘ(´－｀;)ヘ",
     "┐( -“-)┌",
+    "乁༼☯‿☯✿༽ㄏ",
     "ʅ（´◔౪◔）ʃ",
+    "ლ(•ω •ლ)",
     "ヽ(゜～゜o)ノ",
     "ヽ(~～~ )ノ",
     "┐(~ー~;)┌",
     "┐(-。ー;)┌",
-    r"¯\_(ツ)_/¯",
-    r"¯\_(⊙_ʖ⊙)_/¯",
-    r"¯\_༼ ಥ ‿ ಥ ༽_/¯",
+    "¯\_(ツ)_/¯",
+    "¯\_(⊙_ʖ⊙)_/¯",
+    "乁ʕ •̀ ۝ •́ ʔㄏ",
+    "¯\_༼ ಥ ‿ ಥ ༽_/¯",
     "乁( ⁰͡  Ĺ̯ ⁰͡ ) ㄏ",
 ]
 
@@ -522,31 +596,12 @@ SLAP_TEMPLATES = [
     "{hits} {victim} around a bit with a {item}.",
     "{throws} a {item} at {victim}.",
     "grabs a {item} and {throws} it at {victim}'s face.",
-    "{hits} a {item} at {victim}.", "{throws} a few {item} at {victim}.",
-    "grabs a {item} and {throws} it in {victim}'s face.",
     "launches a {item} in {victim}'s general direction.",
-    "sits on {victim}'s face while slamming a {item} {where}.",
     "starts slapping {victim} silly with a {item}.",
     "pins {victim} down and repeatedly {hits} them with a {item}.",
     "grabs up a {item} and {hits} {victim} with it.",
-    "starts slapping {victim} silly with a {item}.",
-    "holds {victim} down and repeatedly {hits} them with a {item}.",
-    "prods {victim} with a {item}.",
-    "picks up a {item} and {hits} {victim} with it.",
     "ties {victim} to a chair and {throws} a {item} at them.",
-    "{hits} {victim} {where} with a {item}.",
-    "ties {victim} to a pole and whips them {where} with a {item}.",
-    "gave a friendly push to help {victim} learn to swim in lava.",
-    "sent {victim} to /dev/null.", "sent {victim} down the memory hole.",
-    "beheaded {victim}.", "threw {victim} off a building.",
-    "replaced all of {victim}'s music with Nickelback.",
-    "spammed {victim}'s email.", "made {victim} a knuckle sandwich.",
-    "slapped {victim} with pure nothing.",
-    "hit {victim} with a small, interstellar spaceship.",
-    "quickscoped {victim}.", "put {victim} in check-mate.",
-    "RSA-encrypted {victim} and deleted the private key.",
-    "put {victim} in the friendzone.",
-    "slaps {victim} with a DMCA takedown request!"
+    "gave a friendly push to help {victim} learn to swim in lava."
 ]
 
 ITEMS = [
@@ -558,15 +613,11 @@ ITEMS = [
     "nail",
     "printer",
     "shovel",
-    "pair of trousers",
     "CRT monitor",
-    "diamond sword",
-    "baguette",
     "physics textbook",
     "toaster",
     "portrait of Richard Stallman",
     "television",
-    "mau5head",
     "five ton truck",
     "roll of duct tape",
     "book",
@@ -574,11 +625,8 @@ ITEMS = [
     "old television",
     "sack of rocks",
     "rainbow trout",
-    "cobblestone block",
-    "lava bucket",
     "rubber chicken",
     "spiked bat",
-    "gold block",
     "fire extinguisher",
     "heavy rock",
     "chunk of dirt",
@@ -598,513 +646,533 @@ THROW = [
 HIT = [
     "hits",
     "whacks",
+    "fek ke maari",
     "slaps",
     "smacks",
     "bashes",
 ]
 
-WHERE = ["in the chest", "on the head", "on the butt", "on the crotch"]
-
 # ===========================================
 
 
-@register(outgoing=True, pattern=r"^\.(\w+)say (.*)")
+#@register(outgoing=True, pattern=r"^.(\w+)say (.*)")
+@borg.on(admin_cmd(pattern=r"(\w+)say (.*)"))
 async def univsaye(cowmsg):
     """ For .cowsay module, userbot wrapper for cow which says things. """
-    arg = cowmsg.pattern_match.group(1).lower()
-    text = cowmsg.pattern_match.group(2)
+    if not cowmsg.text[0].isalpha() and cowmsg.text[0] not in ("/", "#", "@", "!"):
+        arg = cowmsg.pattern_match.group(1).lower()
+        text = cowmsg.pattern_match.group(2)
 
-    if arg == "cow":
-        arg = "default"
-    if arg not in cow.COWACTERS:
-        return
-    cheese = cow.get_cow(arg)
-    cheese = cheese()
+        if arg == "cow":
+            arg = "default"
+        if arg not in cow.COWACTERS:
+            return
+        cheese = cow.get_cow(arg)
+        cheese = cheese()
 
-    await cowmsg.edit(f"`{cheese.milk(text).replace('`', '´')}`")
+        await cowmsg.edit(f"`{cheese.milk(text).replace('`', '´')}`")
 
 
-@register(outgoing=True, pattern="^:/$")
+@register(outgoing=True, pattern="^.:/$")
 async def kek(keks):
-    """ Check yourself ;)"""
-    uio = ["/", "\\"]
-    for i in range(1, 15):
-        time.sleep(0.3)
-        await keks.edit(":" + uio[i % 2])
+    if not keks.text[0].isalpha() and keks.text[0] not in ("/", "#", "@", "!"):
+        """ Check yourself ;)"""
+        uio = ["/", "\\"]
+        for i in range(1, 15):
+            time.sleep(0.3)
+            await keks.edit(":" + uio[i % 2])
 
 
-@register(outgoing=True, pattern=r"^\.coinflip(?: |$)(.*)")
-async def coin(event):
-    r = choice(["heads", "tails"])
-    input_str = event.pattern_match.group(1)
-    if input_str:
-        input_str = input_str.lower()
-    if r == "heads":
-        if input_str == "heads":
-            await event.edit("The coin landed on: **Heads**.\nAs expected.")
-        elif input_str == "tails":
-            await event.edit(
-                "The coin landed on: **Heads**.\nBetter luck next time?")
-        else:
-            await event.edit("The coin landed on: **Heads**.")
-    elif r == "tails":
-        if input_str == "tails":
-            await event.edit("The coin landed on: **Tails**.\nAs expected.")
-        elif input_str == "heads":
-            await event.edit(
-                "The coin landed on: **Tails**.\nBetter luck next time?")
-        else:
-            await event.edit("The coin landed on: **Tails**.")
-
-
-@register(pattern="^\.slap(?: |$)(.*)", outgoing=True)
+@register(pattern="^.slap(?: |$)(.*)", outgoing=True)
 async def who(event):
-    """ slaps a user, or get slapped if not a reply. """
-    replied_user = await get_user_from_event(event)
-    if replied_user:
-        replied_user = replied_user[0]
+    if not event.text[0].isalpha() and event.text[0] not in ("/", "#", "@", "!"):
+        """ slaps a user, or get slapped if not a reply. """
+        if event.fwd_from:
+            return
+
+        replied_user = await get_user(event)
+        caption = await slap(replied_user, event)
+        message_id_to_reply = event.message.reply_to_msg_id
+
+        if not message_id_to_reply:
+            message_id_to_reply = None
+
+        try:
+            await event.edit(caption)
+
+        except:
+            await event.edit("`Can't slap this person, need to fetch some sticks and stones !!`")
+
+async def get_user(event):
+    """ Get the user from argument or replied message. """
+    if event.reply_to_msg_id:
+        previous_message = await event.get_reply_message()
+        replied_user = await event.client(GetFullUserRequest(previous_message.from_id))
     else:
-        return
-    caption = await slap(replied_user, event)
+        user = event.pattern_match.group(1)
 
-    try:
-        await event.edit(caption)
+        if user.isnumeric():
+            user = int(user)
 
-    except BaseException:
-        await event.edit(
-            "`Can't slap this person, need to fetch some sticks and stones !!`"
-        )
+        if not user:
+            self_user = await event.client.get_me()
+            user = self_user.id
 
+        if event.message.entities is not None:
+            probable_user_mention_entity = event.message.entities[0]
+
+            if isinstance(probable_user_mention_entity, MessageEntityMentionName):
+                user_id = probable_user_mention_entity.user_id
+                replied_user = await event.client(GetFullUserRequest(user_id))
+                return replied_user
+        try:
+            user_object = await event.client.get_entity(user)
+            replied_user = await event.client(GetFullUserRequest(user_object.id))
+
+        except (TypeError, ValueError):
+            await event.edit("`I don't slap aliens, they ugly AF !!`")
+            return None
+
+    return replied_user
 
 async def slap(replied_user, event):
     """ Construct a funny slap sentence !! """
-    user_id = replied_user.id
-    first_name = replied_user.first_name
-    username = replied_user.username
+    user_id = replied_user.user.id
+    first_name = replied_user.user.first_name
+    username = replied_user.user.username
 
     if username:
         slapped = "@{}".format(username)
     else:
         slapped = f"[{first_name}](tg://user?id={user_id})"
 
-    temp = choice(SLAP_TEMPLATES)
-    item = choice(ITEMS)
-    hit = choice(HIT)
-    throw = choice(THROW)
-    where = choice(WHERE)
+    temp = random.choice(SLAP_TEMPLATES)
+    item = random.choice(ITEMS)
+    hit = random.choice(HIT)
+    throw = random.choice(THROW)
 
-    caption = "..." + temp.format(
-        victim=slapped, item=item, hits=hit, throws=throw, where=where)
+    caption = "..." + temp.format(victim=slapped, item=item, hits=hit, throws=throw)
 
     return caption
 
-
-@register(outgoing=True, pattern="^-_-$")
+@register(outgoing=True, pattern="^.-_-$")
 async def lol(lel):
-    """ Ok... """
-    okay = "-_-"
-    for i in range(10):
-        okay = okay[:-1] + "_-"
-        await lel.edit(okay)
+    if not lel.text[0].isalpha() and lel.text[0] not in ("/", "#", "@", "!"):
+        """ Ok... """
+        okay = "-_-"
+        for _ in range(10):
+            okay = okay[:-1] + "_-"
+            await lel.edit(okay)
 
-
-@register(outgoing=True, pattern="^\.(yes|no|maybe|decide)$")
-async def decide(event):
-    decision = event.pattern_match.group(1).lower()
-    message_id = event.reply_to_msg_id if event.reply_to_msg_id else None
-    if decision != "decide":
-        r = requests.get(f"https://yesno.wtf/api?force={decision}").json()
-    else:
-        r = requests.get(f"https://yesno.wtf/api").json()
-    await event.delete()
-    await event.client.send_message(event.chat_id,
-                                    str(r["answer"]).upper(),
-                                    reply_to=message_id,
-                                    file=r["image"])
-
-
-@register(outgoing=True, pattern="^;_;$")
+ 
+@register(outgoing=True, pattern="^.;_;$")
 async def fun(e):
-    t = ";_;"
-    for j in range(10):
-        t = t[:-1] + "_;"
-        await e.edit(t)
+    if not e.text[0].isalpha() and e.text[0] not in ("/", "#", "@", "!"):
+        t = ";__;"
+        for j in range(10):
+            t = t[:-1] + "_;"
+            await e.edit(t)
 
-
-@register(outgoing=True, pattern="^\.fp$")
-async def facepalm(e):
-    """ Facepalm  🤦‍♂ """
-    await e.edit("🤦‍♂")
-
-
-@register(outgoing=True, pattern="^\.cry$")
+@register(outgoing=True, pattern="^.cry$")
 async def cry(e):
     """ y u du dis, i cry everytime !! """
-    await e.edit(choice(CRI))
+    if not e.text[0].isalpha() and e.text[0] not in ("/", "#", "@", "!"):
+        await e.edit(random.choice(CRI))
 
-
-@register(outgoing=True, pattern="^\.insult$")
+@register(outgoing=True, pattern="^.insult$")
 async def insult(e):
     """ I make you cry !! """
-    await e.edit(choice(INSULT_STRINGS))
+    if not e.text[0].isalpha() and e.text[0] not in ("/", "#", "@", "!"):
+        await e.edit(random.choice(INSULT_STRINGS))
 
-
-@register(outgoing=True, pattern="^\.cp(?: |$)(.*)")
+@register(outgoing=True, pattern="^.cp(?: |$)(.*)")
 async def copypasta(cp_e):
     """ Copypasta the famous meme """
-    textx = await cp_e.get_reply_message()
-    message = cp_e.pattern_match.group(1)
+    if not cp_e.text[0].isalpha() and cp_e.text[0] not in ("/", "#", "@", "!"):
+        textx = await cp_e.get_reply_message()
+        message = cp_e.pattern_match.group(1)
 
-    if message:
-        pass
-    elif textx:
-        message = textx.text
-    else:
-        await cp_e.edit("`😂🅱️IvE👐sOME👅text👅for✌️Me👌tO👐MAkE👀iT💞funNy!💦`")
-        return
-
-    reply_text = choice(EMOJIS)
-    # choose a random character in the message to be substituted with 🅱️
-    b_char = choice(message).lower()
-    for owo in message:
-        if owo == " ":
-            reply_text += choice(EMOJIS)
-        elif owo in EMOJIS:
-            reply_text += owo
-            reply_text += choice(EMOJIS)
-        elif owo.lower() == b_char:
-            reply_text += "🅱️"
+        if message:
+            pass
+        elif textx:
+            message = textx.text
         else:
-            if bool(getrandbits(1)):
-                reply_text += owo.upper()
+            await cp_e.edit("`😂🅱️IvE👐sOME👅text👅for✌️Me👌tO👐MAkE👀iT💞funNy!💦`")
+            return
+
+        reply_text = random.choice(EMOJIS)
+        b_char = random.choice(
+            message
+        ).lower()  # choose a random character in the message to be substituted with 🅱️
+        for owo in message:
+            if owo == " ":
+                reply_text += random.choice(EMOJIS)
+            elif owo in EMOJIS:
+                reply_text += owo
+                reply_text += random.choice(EMOJIS)
+            elif owo.lower() == b_char:
+                reply_text += "🅱️"
             else:
-                reply_text += owo.lower()
-    reply_text += choice(EMOJIS)
-    await cp_e.edit(reply_text)
+                if bool(random.getrandbits(1)):
+                    reply_text += owo.upper()
+                else:
+                    reply_text += owo.lower()
+        reply_text += random.choice(EMOJIS)
+        await cp_e.edit(reply_text)
 
 
-@register(outgoing=True, pattern="^\.vapor(?: |$)(.*)")
+@register(outgoing=True, pattern="^.vapor(?: |$)(.*)")
 async def vapor(vpr):
     """ Vaporize everything! """
-    reply_text = list()
-    textx = await vpr.get_reply_message()
-    message = vpr.pattern_match.group(1)
-    if message:
-        pass
-    elif textx:
-        message = textx.text
-    else:
-        await vpr.edit("`Ｇｉｖｅ ｓｏｍｅ ｔｅｘｔ ｆｏｒ ｖａｐｏｒ！`")
-        return
-
-    for charac in message:
-        if 0x21 <= ord(charac) <= 0x7F:
-            reply_text.append(chr(ord(charac) + 0xFEE0))
-        elif ord(charac) == 0x20:
-            reply_text.append(chr(0x3000))
+    if not vpr.text[0].isalpha() and vpr.text[0] not in ("/", "#", "@", "!"):
+        reply_text = list()
+        textx = await vpr.get_reply_message()
+        message = vpr.pattern_match.group(1)
+        if message:
+            pass
+        elif textx:
+            message = textx.text
         else:
-            reply_text.append(charac)
+            await vpr.edit("`Ｇｉｖｅ ｓｏｍｅ ｔｅｘｔ ｆｏｒ ｖａｐｏｒ！`")
+            return
 
-    await vpr.edit("".join(reply_text))
+        for charac in message:
+            if 0x21 <= ord(charac) <= 0x7F:
+                reply_text.append(chr(ord(charac) + 0xFEE0))
+            elif ord(charac) == 0x20:
+                reply_text.append(chr(0x3000))
+            else:
+                reply_text.append(charac)
 
+        await vpr.edit("".join(reply_text))
 
-@register(outgoing=True, pattern="^\.str(?: |$)(.*)")
+			  
+@register(outgoing=True, pattern="^.repo$")
+async def source(e):
+    if not e.text[0].isalpha() and e.text[0] not in ("/", "#", "@", "!"):
+        await e.edit("Click [here](https://github.com/spandey112/SensibleUserbot) to open this cool And Best userbot repo By @ceowhitehatcracks.")
+			  
+			  
+@register(outgoing=True, pattern="^.str(?: |$)(.*)")
 async def stretch(stret):
     """ Stretch it."""
-    textx = await stret.get_reply_message()
-    message = stret.text
-    message = stret.pattern_match.group(1)
-    if message:
-        pass
-    elif textx:
-        message = textx.text
-    else:
-        await stret.edit("`GiiiiiiiB sooooooomeeeeeee teeeeeeext!`")
-        return
+    if not stret.text[0].isalpha() and stret.text[0] not in ("/", "#", "@", "!"):
+        textx = await stret.get_reply_message()
+        message = stret.text
+        message = stret.pattern_match.group(1)
+        if message:
+            pass
+        elif textx:
+            message = textx.text
+        else:
+            await stret.edit("`GiiiiiiiB sooooooomeeeeeee teeeeeeext!`")
+            return
 
-    count = randint(3, 10)
-    reply_text = sub(r"([aeiouAEIOUａｅｉｏｕＡＥＩＯＵаеиоуюяыэё])", (r"\1" * count),
-                     message)
-    await stret.edit(reply_text)
+        count = random.randint(3, 10)
+        reply_text = re.sub(
+            r"([aeiouAEIOUａｅｉｏｕＡＥＩＯＵаеиоуюяыэё])",
+            (r"\1"*count),
+            message
+        )
+        await stret.edit(reply_text)
 
 
-@register(outgoing=True, pattern="^\.zal(?: |$)(.*)")
+@register(outgoing=True, pattern="^.zal(?: |$)(.*)")
 async def zal(zgfy):
     """ Invoke the feeling of chaos. """
-    reply_text = list()
-    textx = await zgfy.get_reply_message()
-    message = zgfy.pattern_match.group(1)
-    if message:
-        pass
-    elif textx:
-        message = textx.text
-    else:
-        await zgfy.edit(
-            "`gͫ ̆ i̛ ̺ v͇̆ ȅͅ   a̢ͦ   s̴̪ c̸̢ ä̸ rͩͣ y͖͞   t̨͚ é̠ x̢͖  t͔͛`"
-        )
-        return
+    if not zgfy.text[0].isalpha() and zgfy.text[0] not in ("/", "#", "@", "!"):
+        reply_text = list()
+        textx = await zgfy.get_reply_message()
+        message = zgfy.pattern_match.group(1)
+        if message:
+            pass
+        elif textx:
+            message = textx.text
+        else:
+            await zgfy.edit(
+                "`gͫ ̆ i̛ ̺ v͇̆ ȅͅ   a̢ͦ   s̴̪ c̸̢ ä̸ rͩͣ y͖͞   t̨͚ é̠ x̢͖  t͔͛`"
+            )
+            return
 
-    for charac in message:
-        if not charac.isalpha():
+        for charac in message:
+            if not charac.isalpha():
+                reply_text.append(charac)
+                continue
+
+            for _ in range(0, 3):
+                randint = random.randint(0, 2)
+
+                if randint == 0:
+                    charac = charac.strip() + \
+                        random.choice(ZALG_LIST[0]).strip()
+                elif randint == 1:
+                    charac = charac.strip() + \
+                        random.choice(ZALG_LIST[1]).strip()
+                else:
+                    charac = charac.strip() + \
+                        random.choice(ZALG_LIST[2]).strip()
+
             reply_text.append(charac)
-            continue
 
-        for _ in range(0, 3):
-            zalgint = randint(0, 2)
+        await zgfy.edit("".join(reply_text))
+			  
+@register(outgoing=True, pattern="^.pkill$")
+async def killing (killed):
+    """ Dont Kill Too much -_-"""
+    if not killed.text[0].isalpha() and killed.text[0] not in ("/", "#", "@", "!"):
+        if await killed.get_reply_message():
+            await killed.edit(
+                "`My Master killed targeted user by Headshot 😈......`\n"
+		"#Sad_Reacts_Onli\n"
+            )
+			  
+@register(outgoing=True, pattern="^.bt$")
+async def bluetext(bte):
+    """ Believe me, you will find this useful. """
+    if not bte.text[0].isalpha() and bte.text[0] not in ("/", "#", "@", "!"):
+        if await bte.get_reply_message():
+            await bte.edit(
+                "`BLUETEXT MUST CLICK.`\n"
+                "`Are you a stupid animal which is attracted to colours?`"
+            )
+			  
+@register(outgoing=True, pattern="^.rape$")
+async def raping (raped):
+    """ Dont Rape Too much -_-"""
+    if not raped.text[0].isalpha() and raped.text[0] not in ("/", "#", "@", "!"):
+        index = random.randint(0, len(RAPE_STRINGS) - 1)
+        reply_text = RAPE_STRINGS[index]
+        await raped.edit(reply_text)
+			  
+@register(outgoing=True, pattern="^.pro$")
+async def proo (pros):
+    """ String for Pros only -_-"""
+    if not pros.text[0].isalpha() and pros.text[0] not in ("/", "#", "@", "!"):
+        index = random.randint(0, len(PRO_STRINGS) - 1)
+        reply_text = PRO_STRINGS[index]
+        await pros.edit(reply_text)
 
-            if zalgint == 0:
-                charac = charac.strip() + \
-                    choice(ZALG_LIST[0]).strip()
-            elif zalgint == 1:
-                charac = charac.strip() + \
-                    choice(ZALG_LIST[1]).strip()
-            else:
-                charac = charac.strip() + \
-                    choice(ZALG_LIST[2]).strip()
+@register(outgoing=True, pattern="^.fuk$")
+async def chutiya (fuks):
+    """ String for fhu only -_-"""
+    if not fuks.text[0].isalpha() and fuks.text[0] not in ("/", "#", "@", "!"):
+        index = random.randint(0, len(FUK_STRINGS) - 1)
+        reply_text = FUK_STRINGS[index]
+        await fuks.edit(reply_text)
 
-        reply_text.append(charac)
+@register(outgoing=True, pattern="^.chu$")
+async def chutiya (chus):
+    """ String for Chu only -_-"""
+    if not chus.text[0].isalpha() and chus.text[0] not in ("/", "#", "@", "!"):
+        index = random.randint(0, len(CHU_STRINGS) - 1)
+        reply_text = CHU_STRINGS[index]
+        await chus.edit(reply_text)
+			  			  
+@register(outgoing=True, pattern="^.thanos$")
+async def thanos (thanos):
+    """ String for thanos only -_-"""
+    if not thanos.text[0].isalpha() and thanos.text[0] not in ("/", "#", "@", "!"):
+        index = random.randint(0, len(THANOS_STRINGS) - 1)
+        reply_text = THANOS_STRINGS[index]
+        await thanos.edit(reply_text)	
+			  
+@register(outgoing=True, pattern="^.hardabuse$")
+async def fuckedd (abusehard):
+    """ Dont Use this Too much bsdk -_-"""
+    if not abusehard.text[0].isalpha() and abusehard.text[0] not in ("/", "#", "@", "!"):
+        index = random.randint(0, len(ABUSEHARD_STRING) - 1)
+        reply_text = ABUSEHARD_STRING[index]
+        await abusehard.edit(reply_text)
+			  
+			  
+@register(outgoing=True, pattern="^.gey$")
+async def geys (geyed):
+    """ Use only for gey ppl -_-"""
+    if not geyed.text[0].isalpha() and geyed.text[0] not in ("/", "#", "@", "!"):
+        index = random.randint(0, len(GEY_STRINGS) - 1)
+        reply_text = GEY_STRINGS[index]
+        await geyed.edit(reply_text)
+			  
+			  
+@register(outgoing=True, pattern="^.abuse$")
+async def abusing (abused):
+    """ Dont Abuse Too much bsdk -_-"""
+    if not abused.text[0].isalpha() and abused.text[0] not in ("/", "#", "@", "!"):
+        index = random.randint(0, len(ABUSE_STRINGS) - 1)
+        reply_text = ABUSE_STRINGS[index]
+        await abused.edit(reply_text)
 
-    await zgfy.edit("".join(reply_text))
 
-
-@register(outgoing=True, pattern="^\.hi$")
-async def hoi(hello):
-    """ Greet everyone! """
-    await hello.edit(choice(HELLOSTR))
-
-
-@register(outgoing=True, pattern="^\.owo(?: |$)(.*)")
+@register(outgoing=True, pattern="^.owo(?: |$)(.*)")
 async def faces(owo):
     """ UwU """
-    textx = await owo.get_reply_message()
-    message = owo.pattern_match.group(1)
-    if message:
-        pass
-    elif textx:
-        message = textx.text
-    else:
-        await owo.edit("` UwU no text given! `")
-        return
+    if not owo.text[0].isalpha() and owo.text[0] not in ("/", "#", "@", "!"):
+        textx = await owo.get_reply_message()
+        message = owo.pattern_match.group(1)
+        if message:
+            pass
+        elif textx:
+            message = textx.text
+        else:
+            await owo.edit("` UwU no text given! `")
+            return
 
-    reply_text = sub(r"(r|l)", "w", message)
-    reply_text = sub(r"(R|L)", "W", reply_text)
-    reply_text = sub(r"n([aeiou])", r"ny\1", reply_text)
-    reply_text = sub(r"N([aeiouAEIOU])", r"Ny\1", reply_text)
-    reply_text = sub(r"\!+", " " + choice(UWUS), reply_text)
-    reply_text = reply_text.replace("ove", "uv")
-    reply_text += " " + choice(UWUS)
-    await owo.edit(reply_text)
+        reply_text = re.sub(r"(r|l)", "w", message)
+        reply_text = re.sub(r"(R|L)", "W", reply_text)
+        reply_text = re.sub(r"n([aeiou])", r"ny\1", reply_text)
+        reply_text = re.sub(r"N([aeiouAEIOU])", r"Ny\1", reply_text)
+        reply_text = re.sub(r"\!+", " " + random.choice(UWUS), reply_text)
+        reply_text = reply_text.replace("ove", "uv")
+        reply_text += " " + random.choice(UWUS)
+        await owo.edit(reply_text)
 
 
-@register(outgoing=True, pattern="^\.react$")
+@register(outgoing=True, pattern="^.react$")
 async def react_meme(react):
     """ Make your userbot react to everything. """
-    await react.edit(choice(FACEREACTS))
+    if not react.text[0].isalpha() and react.text[0] not in ("/", "#", "@", "!"):
+        await react.edit(random.choice(FACEREACTS))
 
 
-@register(outgoing=True, pattern="^\.shg$")
+@register(outgoing=True, pattern="^.shg$")
 async def shrugger(shg):
     r""" ¯\_(ツ)_/¯ """
-    await shg.edit(choice(SHGS))
+    if not shg.text[0].isalpha() and shg.text[0] not in ("/", "#", "@", "!"):
+        await shg.edit(random.choice(SHGS))
 
 
-@register(outgoing=True, pattern="^\.chase$")
-async def police(chase):
-    """ Run boi run, i'm gonna catch you !! """
-    await chase.edit(choice(CHASE_STR))
 
 
-@register(outgoing=True, pattern="^\.run$")
-async def runner_lol(run):
-    """ Run, run, RUNNN! """
-    await run.edit(choice(RUNS_STR))
-
-
-@register(outgoing=True, pattern="^\.metoo$")
+@register(outgoing=True, pattern="^.noob$")
 async def metoo(hahayes):
     """ Haha yes """
-    await hahayes.edit(choice(METOOSTR))
-
-
-@register(outgoing=True, pattern="^Oof$")
+    if not hahayes.text[0].isalpha() and hahayes.text[0] not in ("/", "#", "@", "!"):
+        await hahayes.edit(random.choice(NOOBSTR))
+			  
+@register(outgoing=True, pattern="^.rendi$")
+async def metoo(hahayes):
+    """ Haha yes """
+    if not hahayes.text[0].isalpha() and hahayes.text[0] not in ("/", "#", "@", "!"):
+        await hahayes.edit(random.choice(RENDISTR))
+			 			  
+@register(outgoing=True, pattern="^.oof$")
 async def Oof(e):
-    t = "Oof"
-    for j in range(15):
-        t = t[:-1] + "of"
-        await e.edit(t)
+    if not e.text[0].isalpha() and e.text[0] not in ("/", "#", "@", "!"):
+        t = "Oof"
+        for j in range(15):
+            t = t[:-1] + "of"
+            await e.edit(t)
 
-
-@register(outgoing=True, pattern="^\.10iq$")
+@register(outgoing=True, pattern="^.10iq$")
 async def iqless(e):
-    await e.edit("♿")
+    if not e.text[0].isalpha() and e.text[0] not in ("/", "#", "@", "!"):
+        await e.edit("♿")
 
 
-@register(outgoing=True, pattern="^\.moon$")
-async def moon(event):
-    deq = deque(list("🌗🌘🌑🌒🌓🌔🌕🌖"))
-    try:
-        for x in range(32):
-            await sleep(0.1)
-            await event.edit("".join(deq))
-            deq.rotate(1)
-    except BaseException:
-        return
 
 
-@register(outgoing=True, pattern="^\.clock$")
-async def clock(event):
-    deq = deque(list("🕙🕘🕗🕖🕕🕔🕓🕒🕑🕐🕛"))
-    try:
-        for x in range(32):
-            await sleep(0.1)
-            await event.edit("".join(deq))
-            deq.rotate(1)
-    except BaseException:
-        return
-
-
-@register(outgoing=True, pattern="^\.mock(?: |$)(.*)")
+@register(outgoing=True, pattern="^.mock(?: |$)(.*)")
 async def spongemocktext(mock):
     """ Do it and find the real fun. """
-    reply_text = list()
-    textx = await mock.get_reply_message()
-    message = mock.pattern_match.group(1)
-    if message:
-        pass
-    elif textx:
-        message = textx.text
-    else:
-        await mock.edit("`gIvE sOMEtHInG tO MoCk!`")
-        return
-
-    for charac in message:
-        if charac.isalpha() and randint(0, 1):
-            to_app = charac.upper() if charac.islower() else charac.lower()
-            reply_text.append(to_app)
+    if not mock.text[0].isalpha() and mock.text[0] not in ("/", "#", "@", "!"):
+        reply_text = list()
+        textx = await mock.get_reply_message()
+        message = mock.pattern_match.group(1)
+        if message:
+            pass
+        elif textx:
+            message = textx.text
         else:
-            reply_text.append(charac)
+            await mock.edit("`gIvE sOMEtHInG tO MoCk!`")
+            return
 
-    await mock.edit("".join(reply_text))
+        for charac in message:
+            if charac.isalpha() and random.randint(0, 1):
+                to_app = charac.upper() if charac.islower() else charac.lower()
+                reply_text.append(to_app)
+            else:
+                reply_text.append(charac)
+
+        await mock.edit("".join(reply_text))
 
 
-@register(outgoing=True, pattern="^\.clap(?: |$)(.*)")
+@register(outgoing=True, pattern="^.clap(?: |$)(.*)")
 async def claptext(memereview):
     """ Praise people! """
-    textx = await memereview.get_reply_message()
-    message = memereview.pattern_match.group(1)
-    if message:
-        pass
-    elif textx:
-        message = textx.text
-    else:
-        await memereview.edit("`Hah, I don't clap pointlessly!`")
-        return
-    reply_text = "👏 "
-    reply_text += message.replace(" ", " 👏 ")
-    reply_text += " 👏"
-    await memereview.edit(reply_text)
+    if not memereview.text[0].isalpha() and memereview.text[0] not in ("/", "#", "@", "!"):
+        textx = await memereview.get_reply_message()
+        message = memereview.pattern_match.group(1)
+        if message:
+            pass
+        elif textx:
+            message = textx.text
+        else:
+            await memereview.edit("`Hah, I don't clap pointlessly!`")
+            return
+        reply_text = "👏 "
+        reply_text += message.replace(" ", " 👏 ")
+        reply_text += " 👏"
+        await memereview.edit(reply_text)
 
 
-@register(outgoing=True, pattern="^\.bt$")
-async def bluetext(bt_e):
-    """ Believe me, you will find this useful. """
-    if await bt_e.get_reply_message() and bt_e.is_group:
-        await bt_e.edit(
-            "/BLUETEXT /MUST /CLICK.\n"
-            "/ARE /YOU /A /STUPID /ANIMAL /WHICH /IS /ATTRACTED /TO /COLOURS?")
 
 
-@register(outgoing=True, pattern=r"^\.f (.*)")
-async def payf(event):
-    paytext = event.pattern_match.group(1)
-    pay = "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}".format(
-        paytext * 8, paytext * 8, paytext * 2, paytext * 2, paytext * 2,
-        paytext * 6, paytext * 6, paytext * 2, paytext * 2, paytext * 2,
-        paytext * 2, paytext * 2)
-    await event.edit(pay)
+@register(outgoing=True, pattern="^.smk (.*)")
+async def smrk(smk):
+        if not smk.text[0].isalpha() and smk.text[0] not in ("/", "#", "@", "!"):
+            textx = await smk.get_reply_message()
+            message = smk.text
+        if message[5:]:
+            message = str(message[5:])
+        elif textx:
+            message = textx
+            message = str(message.message)
+        if message == 'dele':
+            await smk.edit( message +'te the hell' + "ツ" )
+            await smk.edit("ツ")
+        else:
+             smirk = " ツ"
+             reply_text = message + smirk
+             await smk.edit(reply_text)
 
 
-@register(outgoing=True, pattern="^\.lfy (.*)")
+
+
+
+@register(outgoing=True, pattern="^.lfy (.*)",)
 async def let_me_google_that_for_you(lmgtfy_q):
-    textx = await lmgtfy_q.get_reply_message()
-    qry = lmgtfy_q.pattern_match.group(1)
-    if qry:
-        query = str(qry)
-    elif textx:
-        query = textx
-        query = query.message
-    query_encoded = query.replace(" ", "+")
-    lfy_url = f"http://lmgtfy.com/?s=g&iie=1&q={query_encoded}"
-    payload = {'format': 'json', 'url': lfy_url}
-    r = requests.get('http://is.gd/create.php', params=payload)
-    await lmgtfy_q.edit(f"Here you are, help yourself.\
-    \n[{query}]({r.json()['shorturl']})")
+    if not lmgtfy_q.text[0].isalpha() and lmgtfy_q.text[0] not in ("/", "#", "@", "!"):
+        textx = await lmgtfy_q.get_reply_message()
+        query = lmgtfy_q.text
+        if query[5:]:
+            query = str(query[5:])
+        elif textx:
+            query = textx
+            query = query.message
+        query_encoded = query.replace(" ", "+")
+        lfy_url = f"http://lmgtfy.com/?s=g&iie=1&q={query_encoded}"
+        payload = {'format': 'json', 'url': lfy_url}
+        r = requests.get('http://is.gd/create.php', params=payload)
+        await lmgtfy_q.edit(f"[{query}]({r.json()['shorturl']})")
+        if BOTLOG:
+            await bot.send_message(
+                BOTLOG_CHATID,
+                "LMGTFY query `" + query + "` was executed successfully",
+            )
 
 
-@register(pattern=r"^\.scam(?: |$)(.*)", outgoing=True)
-async def scam(event):
-    """ Just a small command to fake chat actions for fun !! """
-    options = [
-        'typing', 'contact', 'game', 'location', 'voice', 'round', 'video',
-        'photo', 'document', 'cancel'
-    ]
-    input_str = event.pattern_match.group(1)
-    args = input_str.split()
-    if len(args) == 0:  # Let bot decide action and time
-        scam_action = choice(options)
-        scam_time = randint(30, 60)
-    elif len(args) == 1:  # User decides time/action, bot decides the other.
-        try:
-            scam_action = str(args[0]).lower()
-            scam_time = randint(30, 60)
-        except ValueError:
-            scam_action = choice(options)
-            scam_time = int(args[0])
-    elif len(args) == 2:  # User decides both action and time
-        scam_action = str(args[0]).lower()
-        scam_time = int(args[1])
-    else:
-        await event.edit("`Invalid Syntax !!`")
-        return
-    try:
-        if (scam_time > 0):
-            await event.delete()
-            async with event.client.action(event.chat_id, scam_action):
-                await sleep(scam_time)
-    except BaseException:
-        return
 
+               
+			  
 
-@register(pattern=r"^\.type(?: |$)(.*)", outgoing=True)
-async def typewriter(typew):
-    """ Just a small command to make your keyboard become a typewriter! """
-    textx = await typew.get_reply_message()
-    message = typew.pattern_match.group(1)
-    if message:
-        pass
-    elif textx:
-        message = textx.text
-    else:
-        await typew.edit("`Give a text to type!`")
-        return
-    sleep_time = 0.03
-    typing_symbol = "|"
-    old_text = ""
-    await typew.edit(typing_symbol)
-    await sleep(sleep_time)
-    for character in message:
-        old_text = old_text + "" + character
-        typing_text = old_text + "" + typing_symbol
-        await typew.edit(typing_text)
-        await sleep(sleep_time)
-        await typew.edit(old_text)
-        await sleep(sleep_time)
-
+            
+			  
 
 CMD_HELP.update({
-    "memes":
-    ".cowsay\
+    "memes": ".cowsay\
 \nUsage: cow which says things.\
+\n\n.milksay\
+\nUsage: Weird Milk that can speak\
 \n\n:/\
 \nUsage: Check yourself ;)\
 \n\n-_-\
@@ -1121,14 +1189,14 @@ CMD_HELP.update({
 \nUsage: You retard !!\
 \n\n.zal\
 \nUsage: Invoke the feeling of chaos.\
-\n\nOof\
+\n\n.oof\
 \nUsage: Ooooof\
-\n\n.fp\
-\nUsage: Facepalm :P\
 \n\n.moon\
 \nUsage: kensar moon animation.\
 \n\n.clock\
 \nUsage: kensar clock animation.\
+\n\n.earth\
+\nUsage: kensar earth animation.\
 \n\n.hi\
 \nUsage: Greet everyone!\
 \n\n.coinflip <heads/tails>\
@@ -1143,10 +1211,8 @@ CMD_HELP.update({
 \nUsage: y u du dis, i cri.\
 \n\n.shg\
 \nUsage: Shrug at it !!\
-\n\n.run\
-\nUsage: Let Me Run, run, RUNNN!\
-\n\n.chase\
-\nUsage: You better start running\
+\n\n.runs\
+\nUsage: Run, run, RUNNN! [`.disable runs`: disable | `.enable runs`: enable]\
 \n\n.metoo\
 \nUsage: Haha yes\
 \n\n.mock\
@@ -1157,14 +1223,27 @@ CMD_HELP.update({
 \nUsage: Pay Respects.\
 \n\n.bt\
 \nUsage: Believe me, you will find this useful.\
+\n\n.smk <text/reply>\
+\nUsage: A shit module for ツ , who cares.\
 \n\n.type\
 \nUsage: Just a small command to make your keyboard become a typewriter!\
 \n\n.lfy <query>\
 \nUsage: Let me Google that for you real quick !!\
-\n\n.decide [Alternates: (.yes, .no, .maybe)]\
+\n\n.decide\
 \nUsage: Make a quick decision.\
-\n\n.scam <action> <time>\
-\n[Available Actions: (typing, contact, game, location, voice, round, video, photo, document, cancel)]\
-\nUsage: Create fake chat actions, for fun. (Default action: typing)\
+\n\n.abusehard\
+\nUsage: You already got that! Ain't?.\
+\n\n.chu\
+\nUsage: Incase, the person infront of you is....\
+\n\n.fuk\
+\nUsage: The onlu word that can be used fucking everywhere.\
+\n\n.thanos\
+\nUsage: Try and then Snap.\
+\n\n.noob\
+\nUsage: Whadya want to know? Are you a NOOB?\
+\n\n.pro\
+\nUsage: If you think you're pro, try this.\
+\n\n.abuse\
+\nUsage: Protects you from unwanted peeps.\
 \n\n\nThanks to 🅱️ottom🅱️ext🅱️ot (@NotAMemeBot) for some of these."
 })

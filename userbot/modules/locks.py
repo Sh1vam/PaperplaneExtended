@@ -1,16 +1,14 @@
-# Copyright (C) 2019 The Raphielscape Company LLC.
-#
-# Licensed under the Raphielscape Public License, Version 1.c (the "License");
-# you may not use this file except in compliance with the License.
-
 from telethon.tl.functions.messages import EditChatDefaultBannedRightsRequest
 from telethon.tl.types import ChatBannedRights
-
+from userbot import ALIVE_NAME
 from userbot import CMD_HELP
-from userbot.events import register
+from userbot.events import register, errors_handler
+from userbot.utils import admin_cmd
 
-
-@register(outgoing=True, pattern=r"^\.lock ?(.*)")
+DEFAULTUSER = str(ALIVE_NAME) if ALIVE_NAME else "Set ALIVE_NAME in config vars in Heroku"
+#@register(outgoing=True, pattern=r"^.lock ?(.*)")
+@borg.on(admin_cmd(pattern=r"lock ?(.*)"))
+@errors_handler
 async def locks(event):
     input_str = event.pattern_match.group(1).lower()
     peer_id = event.chat_id
@@ -91,7 +89,7 @@ async def locks(event):
         await event.client(
             EditChatDefaultBannedRightsRequest(peer=peer_id,
                                                banned_rights=lock_rights))
-        await event.edit(f"`Locked {what} for this chat !!`")
+        await event.edit(f"{DEFAULTUSER} `locked {what} Because its Rest Time Nimba!!`")
     except BaseException as e:
         await event.edit(
             f"`Do I have proper rights for that ??`\n**Error:** {str(e)}")
@@ -99,6 +97,7 @@ async def locks(event):
 
 
 @register(outgoing=True, pattern=r"^.unlock ?(.*)")
+@errors_handler
 async def rem_locks(event):
     input_str = event.pattern_match.group(1).lower()
     peer_id = event.chat_id
@@ -179,7 +178,7 @@ async def rem_locks(event):
         await event.client(
             EditChatDefaultBannedRightsRequest(peer=peer_id,
                                                banned_rights=unlock_rights))
-        await event.edit(f"`Unlocked {what} for this chat !!`")
+        await event.edit(f"{DEFAULTUSER} `Unlocked {what} now Start Chit Chat !!`")
     except BaseException as e:
         await event.edit(
             f"`Do I have proper rights for that ??`\n**Error:** {str(e)}")
